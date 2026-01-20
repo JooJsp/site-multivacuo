@@ -1,0 +1,13 @@
+# Arquivos de documentação local (não necessários para o site)
+*.txt
+*.md
+!README.md
+
+# Sistema
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
