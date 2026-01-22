@@ -111,9 +111,8 @@ const consultaLoading = document.getElementById('consultaLoading');
 const consultaResultado = document.getElementById('consultaResultado');
 const fecharResultadoBtn = document.getElementById('fecharResultado');
 
-// CONFIGURAÇÃO: Cole aqui o link da sua planilha Google Sheets
-// Exemplo: https://docs.google.com/spreadsheets/d/1ABC123.../edit
-const GOOGLE_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1bXeX1alLyRLZD77hJ8SoKcDFzxCYKo2eSPfVjr-9gM4/edit?usp=sharing';
+// URL da API segura (Google Apps Script)
+const API_URL = 'https://script.google.com/macros/s/AKfycbyosKJjzLArp4Ao-IjHCiIOfVoHHhMPK1zE5WwHG20WdOGPGT_MAL0n0QcN6pGgsfWj/exec';
 
 // Função para formatar CNPJ enquanto digita
 function formatarCNPJ(valor) {
@@ -170,52 +169,34 @@ if (consultaForm) {
         consultaLoading.style.display = 'flex';
 
         try {
-            // Extrai o ID da planilha do Google Sheets
-            const sheetId = GOOGLE_SHEET_URL.match(/\/d\/([a-zA-Z0-9-_]+)/)?.[1];
-
-            if (!sheetId || GOOGLE_SHEET_URL === 'COLE_AQUI_O_LINK_DA_SUA_PLANILHA') {
-                throw new Error('Configure o link da planilha Google Sheets no arquivo script.js');
+            // Verifica se a API está configurada
+            if (API_URL === 'COLE_AQUI_A_URL_DO_APPS_SCRIPT') {
+                throw new Error('Configure a URL do Apps Script no arquivo script.js');
             }
 
-            // URL para acessar a planilha como CSV
-            const csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=0`;
-
-            // Busca os dados da planilha
-            const response = await fetch(csvUrl);
-            const csvText = await response.text();
-
-            // Converte CSV para array de objetos
-            const bombas = parseCSVToBombas(csvText);
-
-            // Procura pela bomba com o número de série informado
-            const bomba = bombas.find(b => b.numeroSerie.toUpperCase() === numeroSerie);
+            // Faz a requisição para a API segura
+            const url = `${API_URL}?cnpj=${cnpjCliente}&serie=${encodeURIComponent(numeroSerie)}`;
+            const response = await fetch(url);
+            const data = await response.json();
 
             // Esconde loading
             consultaLoading.style.display = 'none';
 
-            if (bomba) {
-                // Verifica se o CNPJ corresponde ao da bomba
-                const cnpjBomba = extrairNumerosCNPJ(bomba.cnpj);
-
-                if (cnpjBomba !== cnpjCliente) {
-                    // CNPJ não corresponde - não autorizado
-                    consultaError.style.display = 'flex';
-                    consultaErrorMsg.textContent = 'CNPJ incorreto.';
-                    return;
-                }
+            if (data.success) {
+                const bomba = data.bomba;
 
                 // Preenche os resultados
+                document.getElementById('resultNomeCliente').textContent = bomba.nomeCliente;
                 document.getElementById('resultNumeroSerie').textContent = bomba.numeroSerie;
                 document.getElementById('resultModelo').textContent = bomba.modelo;
                 document.getElementById('resultDataFabricacao').textContent = bomba.dataFabricacao;
-
                 document.getElementById('resultMotorPotencia').textContent = bomba.motorPotencia;
                 document.getElementById('resultMotorMarca').textContent = bomba.motorMarca;
-
                 document.getElementById('resultCorpo').textContent = bomba.materialCorpo;
                 document.getElementById('resultRotor').textContent = bomba.materialRotor;
                 document.getElementById('resultPlaca').textContent = bomba.materialPlaca;
                 document.getElementById('resultFrente').textContent = bomba.materialFrente;
+                document.getElementById('resultSelo').textContent = bomba.materialSelo;
 
                 // Mostra observações se existirem
                 const observacoesDiv = document.getElementById('resultObservacoes');
@@ -238,9 +219,9 @@ if (consultaForm) {
                 consultaResultado.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
             } else {
-                // Bomba não encontrada
+                // Erro retornado pela API
                 consultaError.style.display = 'flex';
-                consultaErrorMsg.textContent = 'Número de série não encontrado. Verifique o número e tente novamente.';
+                consultaErrorMsg.textContent = data.error;
             }
 
         } catch (error) {
@@ -248,9 +229,9 @@ if (consultaForm) {
             consultaLoading.style.display = 'none';
             consultaError.style.display = 'flex';
             consultaErrorMsg.textContent =
-                error.message.includes('Configure o link')
+                error.message.includes('Configure')
                     ? error.message
-                    : 'Erro ao buscar dados. Verifique se a planilha está configurada corretamente.';
+                    : 'Erro ao buscar dados. Tente novamente.';
         }
     });
 
@@ -288,7 +269,8 @@ function parseCSVToBombas(csvText) {
                 materialRotor: values[7]?.trim() || '',
                 materialPlaca: values[8]?.trim() || '',
                 materialFrente: values[9]?.trim() || '',
-                observacoes: values[10] || ''
+                tipoSelo: values[10]?.trim() || '',
+                observacoes: values[11] || ''
             });
         }
     }

@@ -922,6 +922,28 @@ section {
     font-weight: 700;
 }
 
+.resultado-cliente {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: var(--white);
+    padding: 1.5rem;
+    border-radius: 10px;
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.resultado-cliente h4 {
+    font-size: 0.9rem;
+    opacity: 0.9;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+
+.resultado-cliente p {
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin: 0;
+}
+
 .resultado-motor,
 .resultado-componentes,
 .resultado-observacoes {
